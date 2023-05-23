@@ -33,7 +33,7 @@ data class CryptrApiable(
         val params = call.parameters
         val orgDomain = params.get("org_domain")
         val userEmail = params.get("user_email")
-        val createSSOSamlChallengeResponse = cryptr.createSSOSamlChallenge(orgDomain = orgDomain, userEmail = userEmail)
+        val createSSOSamlChallengeResponse = cryptr.createSsoSamlChallenge(orgDomain = orgDomain, userEmail = userEmail)
         if (createSSOSamlChallengeResponse is APISuccess) {
             val authUrl = createSSOSamlChallengeResponse.value.authorizationUrl
             call.respondRedirect(authUrl)
@@ -43,11 +43,11 @@ data class CryptrApiable(
     }
 
     suspend fun handleHeadlessCallback(call: ApplicationCall) {
-        val callbackResp = cryptr.validateSSOChallenge(call.parameters.get("code"))
+        val callbackResp = cryptr.validateSsoChallenge(call.parameters.get("code"))
         if (callbackResp is APISuccess) {
             val challengeResponse = callbackResp.value
             println(cryptr.toJSONString(challengeResponse))
-            val idClaims = challengeResponse.getIdClaims(cryptr.cryptrBaseUrl)
+            val idClaims = challengeResponse.getIdClaims(cryptr.cryptrServiceUrl)
             if (idClaims is JWTToken) {
                 call.respondText(
                     cryptr.format.encodeToString<JWTPayload>(idClaims.payload),
@@ -256,8 +256,8 @@ data class CryptrApiable(
             val ssoAdminEmail = call.parameters.get("email")
             val emailTemplateId = call.parameters.get("email_template_id")
             val sendEmail: Boolean = call.parameters.get("send_email") == "true"
-            val resp = cryptr.inviteSSOAdminOnboarding(
-                organizationDomain = orgDomain
+            val resp = cryptr.inviteSsoAdminOnboarding(
+                orgDomain = orgDomain
             )
             if (resp is APISuccess) {
                 call.respondText(
@@ -277,7 +277,7 @@ data class CryptrApiable(
     suspend fun retrieveAdminOnboarding(call: ApplicationCall) {
         try {
             val organizationDomain = call.parameters.getOrFail("org_domain")
-            val resp = cryptr.getAdminOnboarding(organizationDomain, "sso-connection")
+            val resp = cryptr.retrieveAdminOnboarding(organizationDomain, "sso-connection")
             call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -307,7 +307,7 @@ data class CryptrApiable(
             val applicationId = call.parameters.get("application_id")
             val ssoAdminEmail = call.parameters.get("email")
             val sendEmail = call.parameters.get("send_email") == "true"
-            val resp = cryptr.createSSOConnection(orgDomain, providerType, applicationId, ssoAdminEmail, sendEmail)
+            val resp = cryptr.createSsoConnection(orgDomain, providerType, applicationId, ssoAdminEmail, sendEmail)
             if (resp is APISuccess) {
                 call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
             } else {
