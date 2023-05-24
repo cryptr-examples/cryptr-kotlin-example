@@ -9,13 +9,13 @@ First step is to import the dependency
 ### Gradle(Kotlin)
 
 ```kotlin
-implementation("co.cryptr:cryptr-kotlin:0.1.1")
+implementation("co.cryptr:cryptr-kotlin:0.1.2")
 ```
 
 ### Gradle(short)
 
 ```java
-implementation'co.cryptr:cryptr-kotlin:0.1.1'
+implementation'co.cryptr:cryptr-kotlin:0.1.2'
 ```
 
 ## Configuration
@@ -61,7 +61,7 @@ entire process
 ```kotlin
 // 1. generate a challenge from any point of your app (requires network) and retrieve authorization URL
 val ssoSamlChallengePayload =
-    cryptr.createSSOSamlChallenge(
+    cryptr.createSsoSamlChallenge(
         redirectUri = "https://localhost:8080/some-callback-endpoint",
         orgDomain = orgDomain,
         userEmail = userEmail
@@ -85,7 +85,7 @@ import io.ktor.server.routing.*
 
 routing {
     get("/some-callback-endpoint") {
-        val challengeValidation = cryptr.validateSSOChallenge(call.parameters.get("code"))
+        val challengeValidation = cryptr.validateSsoChallenge(call.parameters.get("code"))
         if (challengeValidation is APISuccess) {
             val endUserAccessToken = challengeValidation.value.accessToken
             // do your session opening process

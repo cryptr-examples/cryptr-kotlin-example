@@ -46,7 +46,6 @@ data class CryptrApiable(
         val callbackResp = cryptr.validateSsoChallenge(call.parameters.get("code"))
         if (callbackResp is APISuccess) {
             val challengeResponse = callbackResp.value
-            println(cryptr.toJSONString(challengeResponse))
             val idClaims = challengeResponse.getIdClaims(cryptr.cryptrServiceUrl)
             if (idClaims is JWTToken) {
                 call.respondText(
