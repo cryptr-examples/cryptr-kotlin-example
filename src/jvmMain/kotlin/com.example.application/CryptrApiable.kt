@@ -77,7 +77,7 @@ data class CryptrApiable(
 
     suspend fun listOrganizations(call: ApplicationCall) {
         if (call.parameters.contains("org_domain")) {
-            val org = cryptr.getOrganization(domain = call.parameters.getOrFail("org_domain"))
+            val org = cryptr.retrieveOrganization(domain = call.parameters.getOrFail("org_domain"))
             call.respondText(cryptr.toJSONString(org), ContentType.Application.Json)
         } else {
             val perPage = call.parameters.get("per_page")?.toInt()
@@ -106,7 +106,7 @@ data class CryptrApiable(
 
     suspend fun deleteOrganization(call: ApplicationCall) {
         val domain = call.parameters.getOrFail("org_domain")
-        val org = cryptr.getOrganization(domain)
+        val org = cryptr.retrieveOrganization(domain)
         if (org is APISuccess) {
             call.respondText(
                 cryptr.toJSONString(cryptr.deleteOrganization(org.value)!!),
@@ -120,7 +120,7 @@ data class CryptrApiable(
     suspend fun listUsers(call: ApplicationCall) {
         val organizationDomain = call.parameters.getOrFail("org_domain")
         if (call.parameters.contains("id")) {
-            val user = cryptr.getUser(organizationDomain, userId = call.parameters.getOrFail("id"))
+            val user = cryptr.retrieveUser(organizationDomain, userId = call.parameters.getOrFail("id"))
             call.respondText(cryptr.toJSONString(user), ContentType.Application.Json)
         } else {
             val perPage = call.parameters.get("per_page")?.toIntOrNull()
@@ -161,7 +161,7 @@ data class CryptrApiable(
         val organizationDomain = call.parameters.getOrFail("org_domain")
         val userId = call.parameters.getOrFail("id")
         userId.plus("toto")
-        val response = cryptr.getUser(organizationDomain, userId)
+        val response = cryptr.retrieveUser(organizationDomain, userId)
         if (response is APISuccess) {
             println("response.value")
             println(response.value)
@@ -177,7 +177,7 @@ data class CryptrApiable(
     suspend fun deleteUser(call: ApplicationCall) {
         val domain = call.parameters.getOrFail("org_domain")
         val userId = call.parameters.getOrFail("id")
-        val result = cryptr.getUser(domain, userId)
+        val result = cryptr.retrieveUser(domain, userId)
         if (result is APISuccess) {
             call.respondText(
                 cryptr.deleteUser(result.value).toString(),
@@ -191,7 +191,7 @@ data class CryptrApiable(
     suspend fun listApplications(call: ApplicationCall) {
         val organizationDomain = call.parameters.getOrFail("org_domain")
         if (call.parameters.contains("id")) {
-            val application = cryptr.getApplication(organizationDomain, call.parameters.getOrFail("id"))
+            val application = cryptr.retrieveApplication(organizationDomain, call.parameters.getOrFail("id"))
             call.respondText(cryptr.toJSONString(application), ContentType.Application.Json)
         } else {
             val perPage = call.parameters.get("per_page")?.toInt()
@@ -238,7 +238,7 @@ data class CryptrApiable(
     suspend fun deleteteApplications(call: ApplicationCall) {
         val domain = call.parameters.getOrFail("org_domain")
         val userId = call.parameters.getOrFail("id")
-        val result = cryptr.getApplication(domain, userId)
+        val result = cryptr.retrieveApplication(domain, userId)
         if (result is APISuccess) {
             call.respondText(
                 cryptr.deleteApplication(result.value).toString(),
@@ -314,6 +314,41 @@ data class CryptrApiable(
                 call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
             }
 
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+    }
+
+    suspend fun listSsoConnections(call: ApplicationCall) {
+        try {
+            val perPage = call.parameters.get("per_page")?.toInt()
+            val currentPage = call.parameters.get("current_page")?.toInt()
+            val listing = cryptr.listSsoConnections(perPage, currentPage)
+            if (call.parameters.contains("raw")) {
+                if (listing is APISuccess) {
+                    call.respondText(
+                        cryptr.toJSONListString(listing as APIResult<List<CryptrResource>, ErrorMessage>),
+                        ContentType.Application.Json
+                    )
+                } else {
+                    call.respondText(
+                        listing.toString(),
+                        ContentType.Application.Json
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+    }
+
+    suspend fun retrieveSsoConnection(call: ApplicationCall) {
+        try {
+            val orgDomain = call.parameters.getOrFail("org_domain")
+            val response = cryptr.retrieveSsoConnection(orgDomain)
+            call.respondText(cryptr.toJSONString(response), ContentType.Application.Json)
         } catch (e: Exception) {
             e.printStackTrace()
             call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)

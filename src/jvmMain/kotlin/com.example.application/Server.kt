@@ -115,7 +115,14 @@ fun Application.myApplicationModule() {
         get("/delete-application") {
             cryptrApiable.deleteteApplications(call)
         }
-        post("/create-sso-connection") {
+        get("/sso-connections") {
+            cryptrApiable.listSsoConnections(call)
+        }
+        get("/sso-connection") {
+            cryptrApiable.retrieveSsoConnection(call)
+        }
+        get("/create-sso-connection") {
+            println("routing")
             cryptrApiable.createSSOConnection(call)
         }
         get("/invite-admin-onboarding") {
