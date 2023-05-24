@@ -57,7 +57,7 @@ const val PORT = 8080
 const val HOST = "127.0.0.1"
 
 fun setCryptrEnvManually() {
-    System.setProperty(CryptrEnvironment.CRYPTR_TENANT_DOMAIN.toString(), "tenant-domain")
+    System.setProperty(CryptrEnvironment.CRYPTR_ACCOUNT_DOMAIN.toString(), "account-domain")
     System.setProperty(CryptrEnvironment.CRYPTR_BASE_URL.toString(), "https://my-company.authent.me")
     System.setProperty(CryptrEnvironment.CRYPTR_DEFAULT_REDIRECT_URL.toString(), "http://localhost:8080/callback")
     System.setProperty(CryptrEnvironment.CRYPTR_API_KEY_CLIENT_ID.toString(), "api-key-id")
@@ -115,7 +115,14 @@ fun Application.myApplicationModule() {
         get("/delete-application") {
             cryptrApiable.deleteteApplications(call)
         }
-        post("/create-sso-connection") {
+        get("/sso-connections") {
+            cryptrApiable.listSsoConnections(call)
+        }
+        get("/sso-connection") {
+            cryptrApiable.retrieveSsoConnection(call)
+        }
+        get("/create-sso-connection") {
+            println("routing")
             cryptrApiable.createSSOConnection(call)
         }
         get("/invite-admin-onboarding") {

@@ -9,13 +9,13 @@ First step is to import the dependency
 ### Gradle(Kotlin)
 
 ```kotlin
-implementation("co.cryptr:cryptr-kotlin:0.1.0")
+implementation("co.cryptr:cryptr-kotlin:0.1.1")
 ```
 
 ### Gradle(short)
 
 ```java
-implementation'co.cryptr:cryptr-kotlin:0.1.0'
+implementation'co.cryptr:cryptr-kotlin:0.1.1'
 ```
 
 ## Configuration
