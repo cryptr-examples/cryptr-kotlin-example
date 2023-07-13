@@ -404,4 +404,121 @@ data class CryptrApiable(
             call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
         }
     }
+
+    suspend fun authenticateUsingPassword(call: ApplicationCall) {
+        try {
+            val orgDomain = call.parameters.getOrFail("org_domain")
+            val userEmail = call.parameters.getOrFail("user_email")
+            val plainText = call.parameters.get("plain_text")
+            val passwordChallengeResponse = cryptr.createPasswordChallenge(orgDomain, userEmail, plainText)
+            if (passwordChallengeResponse is APISuccess) {
+                val passwordChallenge = passwordChallengeResponse.value
+                println("passwordChallenge")
+                println(cryptr.toJSONString(passwordChallenge))
+
+                if (passwordChallenge.isExpired()) {
+                    cryptr.createPassword(
+                        userEmail = userEmail,
+                        plaintText = plainText!!,
+                        passwordCode = passwordChallenge.getRenewCode(),
+                        orgDomain = orgDomain
+                    )
+                } else if (passwordChallenge.isSuccess()) {
+                    val code = passwordChallenge.code
+                    val passwordTokenResponse = cryptr.getPasswordChallengeTokens(code)
+                    println(passwordTokenResponse)
+                    //OR cryptr.getPasswordChallengeTokens(passwordChallenge)
+                    if (passwordTokenResponse is APISuccess) {
+                        val passwordChallengeResponse: PasswordChallengeResponse = passwordTokenResponse.value
+                        call.respondText(
+                            cryptr.toJSONString(passwordChallengeResponse),
+                            ContentType.Application.Json
+                        )
+                    } else {
+                        call.respondText(cryptr.toJSONString(passwordTokenResponse), ContentType.Application.Json)
+                    }
+                } else {
+                    call.respondText(cryptr.toJSONString(passwordChallenge), ContentType.Application.Json)
+
+                }
+            } else {
+                call.respondText(cryptr.toJSONString(passwordChallengeResponse), ContentType.Application.Json)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+    }
+
+    suspend fun createPasswordRequest(call: ApplicationCall) {
+        try {
+            val orgDomain = call.parameters.getOrFail("org_domain")
+            val userEmail = call.parameters.getOrFail("user_email")
+            val formatter = DateTimeFormatter.ofPattern("dd_HH_mm")
+            val current = LocalDateTime.now().format(formatter)
+            val newPlainText = "test2023A$current"
+            println("newPlainText $newPlainText")
+            val redirectUri = "http://localhost:8080/password-callback?new_plain_text=$newPlainText"
+            val createPasswordRequestResponse = cryptr.createPasswordRequest(userEmail, redirectUri, orgDomain)
+            if (createPasswordRequestResponse is APISuccess) {
+                val passwordRequest = createPasswordRequestResponse.value
+                call.respondText(cryptr.toJSONString(passwordRequest), ContentType.Application.Json)
+            } else {
+                call.respondText(cryptr.toJSONString(createPasswordRequestResponse), ContentType.Application.Json)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+    }
+
+    suspend fun passwordCallback(call: ApplicationCall) {
+        try {
+            val passwordCode = call.parameters.getOrFail("password_code")
+            val newPlainText = call.parameters.getOrFail("new_plain_text")
+
+            val resp = cryptr.createPassword(passwordCode, newPlainText)
+            if (resp is APISuccess) {
+                val value = resp.value
+                call.respondText(cryptr.toJSONString(value), ContentType.Application.Json)
+            } else {
+                call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+    }
+
+    suspend fun requestPasswordWithoutEmail(call: ApplicationCall) {
+        try {
+            val userEmail = call.parameters.getOrFail("user_email")
+            val plainText = call.parameters.getOrFail("plain_text")
+            val orgDomain = call.parameters.getOrFail("org_domain")
+
+            val resp = cryptr.createPasswordWithoutEmailVerification(userEmail, plainText, orgDomain)
+            if (resp is APISuccess) {
+                val value = resp.value
+                val pwdCode = value.passwordCode
+                println("pwdCode: $pwdCode")
+                if (pwdCode !== null) {
+                    val tokenResponse = cryptr.getPasswordChallengeTokens(pwdCode)
+                    if (tokenResponse is APISuccess) {
+                        call.respondText(cryptr.toJSONString(tokenResponse.value), ContentType.Application.Json)
+                    } else {
+                        call.respondText(cryptr.toJSONString(tokenResponse), ContentType.Application.Json)
+                    }
+                } else {
+                    call.respondText(cryptr.toJSONString(value), ContentType.Application.Json)
+                }
+
+            } else {
+                call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+
+    }
 }
