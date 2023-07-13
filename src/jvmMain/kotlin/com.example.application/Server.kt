@@ -17,11 +17,11 @@ import kotlinx.html.*
 
 fun HTML.index() {
     head {
-        title("Hello from Ktor!")
+        title("cryptr-kotlin implemementation!")
     }
     body {
         div {
-            +"Hello from Ktor"
+            +"Hello, let's test cryptr-kotlin"
         }
         div {
             id = "root"
@@ -73,7 +73,6 @@ fun main() {
 
 fun Application.myApplicationModule() {
     val cryptrApiable = CryptrApiable(Cryptr(), "DEBUG")
-
     routing {
         get("/") {
 //            cryptrApiable.createSSOConnection(call)
@@ -90,9 +89,6 @@ fun Application.myApplicationModule() {
         }
         get("/create-organization") {
             cryptrApiable.createOrganization(call)
-        }
-        get("/delete-organization") {
-            cryptrApiable.deleteOrganization(call)
         }
         get("/users") {
             cryptrApiable.listUsers(call)
@@ -125,7 +121,10 @@ fun Application.myApplicationModule() {
             println("routing")
             cryptrApiable.createSSOConnection(call)
         }
-        get("/invite-admin-onboarding") {
+        get("/create-sso-admin-onboarding") {
+            cryptrApiable.createSsoAdminOnboarding(call)
+        }
+        get("/invite-sso-admin-onboarding") {
             cryptrApiable.inviteAdminOnboarding(call)
         }
         get("/admin-onboarding") {

@@ -17,7 +17,7 @@ idea {
 
 repositories {
     jcenter()
-//    mavenLocal()
+    mavenLocal()
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/kotlinx-html/maven")
 }
@@ -50,7 +50,7 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation("co.cryptr:cryptr-kotlin:0.1.2")
+                implementation("co.cryptr:cryptr-kotlin:0.1.3")
                 implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
                 implementation("io.ktor:ktor-server-netty:2.0.2")
                 implementation("io.ktor:ktor-server-html-builder-jvm:2.0.2")
