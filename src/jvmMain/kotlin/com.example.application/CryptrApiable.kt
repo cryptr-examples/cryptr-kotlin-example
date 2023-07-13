@@ -12,6 +12,9 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.util.*
 import kotlinx.serialization.encodeToString
+import org.json.JSONObject
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 data class CryptrApiable(
     val cryptr: Cryptr,
@@ -67,7 +70,20 @@ data class CryptrApiable(
             val organizationName = call.parameters.getOrFail("name")
             val allowedEmailDomains = call.parameters.getAll("allowed_email_domains[]")
             val organizationResponse = cryptr.createOrganization(organizationName, allowedEmailDomains?.toSet())
-            call.respondText(cryptr.toJSONString(organizationResponse), ContentType.Application.Json)
+            if (organizationResponse is APISuccess) {
+                val organization = organizationResponse.value
+                val orgPayload = cryptr.toJSONString(organization)
+                val payload = JSONObject()
+                    .put("organization", JSONObject(orgPayload))
+                    .put(
+                        "create_sso_connection",
+                        "http://localhost:8080/create-sso-connection?org_domain=${organization.domain}"
+                    )
+                call.respondText(payload.toString(2), ContentType.Application.Json)
+            } else {
+                call.respondText(cryptr.toJSONString(organizationResponse), ContentType.Application.Json)
+
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
@@ -252,11 +268,12 @@ data class CryptrApiable(
         try {
             val orgDomain = call.parameters.getOrFail("org_domain")
             val providerType = call.parameters.get("provider_type")
-            val ssoAdminEmail = call.parameters.get("email")
+            val itAdminEmail = call.parameters.get("it_admin_email")
             val emailTemplateId = call.parameters.get("email_template_id")
             val sendEmail: Boolean = call.parameters.get("send_email") == "true"
             val resp = cryptr.inviteSsoAdminOnboarding(
-                orgDomain = orgDomain
+                orgDomain = orgDomain,
+                itAdminEmail = itAdminEmail
             )
             if (resp is APISuccess) {
                 call.respondText(
@@ -308,7 +325,15 @@ data class CryptrApiable(
             val sendEmail = call.parameters.get("send_email") == "true"
             val resp = cryptr.createSsoConnection(orgDomain, providerType, applicationId, ssoAdminEmail, sendEmail)
             if (resp is APISuccess) {
-                call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
+                val ssoConnection = resp.value
+                val connectionPayload = JSONObject(cryptr.toJSONString(ssoConnection))
+                val payload = JSONObject()
+                    .put("sso_connection", connectionPayload)
+                    .put(
+                        "create_sso_admin_onboarding",
+                        "http://localhost:8080/create-sso-admin-onboarding?org_domain=${orgDomain}&email_template_id=${"fd783cb9-21d5-4cbf-a86b-f36cd7581deb"}"
+                    )
+                call.respondText(payload.toString(2), ContentType.Application.Json)
             } else {
                 call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
             }
@@ -348,6 +373,32 @@ data class CryptrApiable(
             val orgDomain = call.parameters.getOrFail("org_domain")
             val response = cryptr.retrieveSsoConnection(orgDomain)
             call.respondText(cryptr.toJSONString(response), ContentType.Application.Json)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+    }
+
+    suspend fun createSsoAdminOnboarding(call: ApplicationCall) {
+        try {
+            val orgDomain = call.parameters.getOrFail("org_domain")
+            val itAdminEmail = call.parameters.getOrFail("email")
+            val response = cryptr.createSsoAdminOnboarding(
+                orgDomain = orgDomain,
+                itAdminEmail = itAdminEmail
+            )
+            if (response is APISuccess) {
+                val onobardingPayload = JSONObject(cryptr.toJSONString(response.value))
+                val payload = JSONObject()
+                    .put("admin_onboarding", onobardingPayload)
+                    .put(
+                        "invite-admin-onboarding",
+                        "http://localhost:8080/invite-sso-admin-onboarding?org_domain=${orgDomain}&it_admin_email=thibaud@crpytr.co"
+                    )
+                call.respondText(payload.toString(), ContentType.Application.Json)
+            } else {
+                call.respondText(cryptr.toJSONString(response), ContentType.Application.Json)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
