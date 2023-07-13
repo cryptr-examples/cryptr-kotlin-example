@@ -1,6 +1,5 @@
 import csstype.Display
 import csstype.px
-import csstype.rgb
 import emotion.react.css
 import react.FC
 import react.Props
@@ -22,14 +21,6 @@ val Welcome = FC<WelcomeProps> { props ->
     var userEmail by useState(props.userEmail)
 
     div {
-        css {
-            padding = 5.px
-            backgroundColor = rgb(8, 97, 22)
-            color = rgb(56, 246, 137)
-        }
-        +"Bonjour, $name"
-    }
-    div {
         div {
             input {
                 css {
@@ -47,37 +38,63 @@ val Welcome = FC<WelcomeProps> { props ->
             a {
                 href = "/request?org_domain=$orgDomain"
                 css {
-                    width = 25.px
-                    height = 25.px
+//                    width = 25.px
+//                    height = 25.px
                     display = Display.block
-                    backgroundColor = rgb(42, 42, 42)
                 }
+                +"Headless process"
             }
         }
+    }
+    div {
         div {
             input {
-                type = InputType.email
-                value = userEmail
-                onChange = { event ->
-                    userEmail = event.target.value
-                }
                 css {
-                    marginTop = 5.px
+                    marginTop = 25.px
                     marginBottom = 5.px
                     fontSize = 14.px
                     display = Display.inline
                 }
-            }
-            a {
-                href = "/request?user_email=$userEmail"
-                css {
-                    width = 25.px
-                    height = 25.px
-                    display = Display.block
-                    backgroundColor = rgb(24, 24, 24)
+                type = InputType.text
+                value = name
+                onChange = { event ->
+                    name = event.target.value
                 }
             }
+            a {
+                href = "/create-organization?name=$name&allowed_email_domains[]=${name.replace(" ", "_")}.co"
+                css {
+//                    width = 25.px
+//                    height = 25.px
+                    display = Display.block
+                }
+                +"Creer une organization"
+            }
         }
+//        div {
+//            input {
+//                type = InputType.email
+//                value = userEmail
+//                onChange = { event ->
+//                    userEmail = event.target.value
+//                }
+//                css {
+//                    marginTop = 5.px
+//                    marginBottom = 5.px
+//                    fontSize = 14.px
+//                    display = Display.inline
+//                }
+//            }
+//            a {
+//                href = "/request?user_email=$userEmail"
+//                css {
+//                    width = 25.px
+//                    height = 25.px
+//                    display = Display.block
+//                    backgroundColor = rgb(24, 24, 24)
+//                }
+//            }
+//        }
     }
 
 
