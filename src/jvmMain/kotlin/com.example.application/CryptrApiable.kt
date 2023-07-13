@@ -519,6 +519,5 @@ data class CryptrApiable(
             e.printStackTrace()
             call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
         }
-
     }
 }

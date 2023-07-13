@@ -127,11 +127,17 @@ fun Application.myApplicationModule() {
         get("/invite-sso-admin-onboarding") {
             cryptrApiable.inviteAdminOnboarding(call)
         }
-        get("/admin-onboarding") {
-            cryptrApiable.retrieveAdminOnboarding(call)
+        get("/password-login") {
+            cryptrApiable.authenticateUsingPassword(call)
         }
-        get("/reset-admin-onboarding") {
-            cryptrApiable.resetAdminOnboarding(call)
+        get("/request-password") {
+            cryptrApiable.createPasswordRequest(call)
+        }
+        get("/request-password-without-email") {
+            cryptrApiable.requestPasswordWithoutEmail(call)
+        }
+        get("/password-callback") {
+            cryptrApiable.passwordCallback(call)
         }
         static("/static") {
             resources()
