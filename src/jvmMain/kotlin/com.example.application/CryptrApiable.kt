@@ -520,4 +520,23 @@ data class CryptrApiable(
             call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
         }
     }
+
+    suspend fun createPasswordConnection(call: ApplicationCall) {
+        try {
+            val orgDomain = call.parameters.getOrFail("org_domain")
+            val minLength = call.parameters.get("min_length")?.toInt()
+            val maxLength = call.parameters.get("max_length")?.toInt()
+            val forgotPasswordTemplateId = call.parameters.get("template_id")
+            val resp = cryptr.createPasswordConnection(orgDomain, minLength, maxLength, forgotPasswordTemplateId, 3600)
+            if (resp is APISuccess) {
+                val value = resp.value
+                call.respondText(cryptr.toJSONString(value), ContentType.Application.Json)
+            } else {
+                call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+    }
 }

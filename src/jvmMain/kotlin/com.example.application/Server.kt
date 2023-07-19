@@ -127,6 +127,10 @@ fun Application.myApplicationModule() {
         get("/invite-sso-admin-onboarding") {
             cryptrApiable.inviteAdminOnboarding(call)
         }
+        get("/create-password-connection") {
+            println("routing")
+            cryptrApiable.createPasswordConnection(call)
+        }
         get("/password-login") {
             cryptrApiable.authenticateUsingPassword(call)
         }
