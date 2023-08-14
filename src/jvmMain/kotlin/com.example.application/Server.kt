@@ -75,14 +75,21 @@ fun Application.myApplicationModule() {
     val cryptrApiable = CryptrApiable(Cryptr(), "DEBUG")
     routing {
         get("/") {
-//            cryptrApiable.createSSOConnection(call)
-            call.respondHtml(HttpStatusCode.OK, HTML::index)
+            if (call.parameters.contains("code")) {
+                cryptrApiable.handleHeadlessCallback(call)
+            } else {
+                call.respondHtml(HttpStatusCode.OK, HTML::index)
+            }
+
         }
         get("/request") {
             cryptrApiable.handleHeadlessRequest(call)
         }
         get("/callback") {
             cryptrApiable.handleHeadlessCallback(call)
+        }
+        get("/ml-callback") {
+            cryptrApiable.handleMLCallback(call)
         }
         get("/organizations") {
             cryptrApiable.listOrganizations(call)
@@ -128,7 +135,6 @@ fun Application.myApplicationModule() {
             cryptrApiable.inviteAdminOnboarding(call)
         }
         get("/create-password-connection") {
-            println("routing")
             cryptrApiable.createPasswordConnection(call)
         }
         get("/password-login") {
@@ -142,6 +148,12 @@ fun Application.myApplicationModule() {
         }
         get("/password-callback") {
             cryptrApiable.passwordCallback(call)
+        }
+        get("/create-magic-link-connection") {
+            cryptrApiable.createMagicLinkConnection(call)
+        }
+        get("/create-magic-link-challenge") {
+            cryptrApiable.createMagicLinkChallenge(call)
         }
         static("/static") {
             resources()

@@ -36,7 +36,10 @@ data class CryptrApiable(
         val params = call.parameters
         val orgDomain = params.get("org_domain")
         val userEmail = params.get("user_email")
-        val createSSOSamlChallengeResponse = cryptr.createSsoSamlChallenge(orgDomain = orgDomain, userEmail = userEmail)
+        val redirectUri: String = params.get("redirect_uri") ?: "http://localhost:8080"
+        val createSSOSamlChallengeResponse = cryptr.createSsoSamlChallenge(
+            redirectUri, orgDomain, userEmail
+        )
         if (createSSOSamlChallengeResponse is APISuccess) {
             val authUrl = createSSOSamlChallengeResponse.value.authorizationUrl
             call.respondRedirect(authUrl)
@@ -47,6 +50,8 @@ data class CryptrApiable(
 
     suspend fun handleHeadlessCallback(call: ApplicationCall) {
         val callbackResp = cryptr.validateSsoChallenge(call.parameters.get("code"))
+        println("callbackResp")
+        println(callbackResp)
         if (callbackResp is APISuccess) {
             val challengeResponse = callbackResp.value
             val idClaims = challengeResponse.getIdClaims(cryptr.cryptrServiceUrl)
@@ -429,7 +434,7 @@ data class CryptrApiable(
                     println(passwordTokenResponse)
                     //OR cryptr.getPasswordChallengeTokens(passwordChallenge)
                     if (passwordTokenResponse is APISuccess) {
-                        val passwordChallengeResponse: PasswordChallengeResponse = passwordTokenResponse.value
+                        val passwordChallengeResponse: HeadlessChallengeResponse = passwordTokenResponse.value
                         call.respondText(
                             cryptr.toJSONString(passwordChallengeResponse),
                             ContentType.Application.Json
@@ -538,5 +543,63 @@ data class CryptrApiable(
             e.printStackTrace()
             call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
         }
+    }
+
+    suspend fun createMagicLinkConnection(call: ApplicationCall) {
+        try {
+            val orgDomain = call.parameters.getOrFail("org_domain")
+            val findOrCreateUser = call.parameters.get("find_or_created_user")?.toBooleanStrictOrNull()
+            val signInTemplateId = call.parameters.get("signIntTemplateId")
+            val resp = cryptr.createMagicLinkConnection(orgDomain, findOrCreateUser, signInTemplateId)
+            if (resp is APISuccess) {
+                val value = resp.value
+                call.respondText(cryptr.toJSONString(value), ContentType.Application.Json)
+            } else {
+                call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+    }
+
+    suspend fun createMagicLinkChallenge(call: ApplicationCall) {
+        try {
+            val userEmail = call.parameters.getOrFail("user_email")
+            val redirectUri = "http://localhost:8080/ml-callback"
+            val orgDomain = call.parameters.get("org_domain")
+            val resp = cryptr.createMagicLinkChallenge(
+                userEmail, redirectUri, orgDomain
+            )
+            if (resp is APISuccess) {
+                val value = resp.value
+                call.respondText(cryptr.toJSONString(value), ContentType.Application.Json)
+            } else {
+                call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+    }
+
+    suspend fun handleMLCallback(call: ApplicationCall) {
+        try {
+            val code = call.parameters.getOrFail("code")
+            val resp = cryptr.getChallengeTokens(code)
+            println("rest")
+            println(resp)
+            if (resp is APISuccess) {
+                val value = resp.value
+                call.respondText(cryptr.toJSONString(value), ContentType.Application.Json)
+            } else {
+                call.respondText(cryptr.toJSONString(resp), ContentType.Application.Json)
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respondText("{\"error\": \"${e.message}\"}", ContentType.Application.Json)
+        }
+
     }
 }
