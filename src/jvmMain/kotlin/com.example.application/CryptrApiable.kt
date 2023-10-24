@@ -54,8 +54,7 @@ data class CryptrApiable(
         val redirectUri = "http://localhost:8080/callback"
         val createMagicLinkChallengeResponse = cryptr.createMagicLinkChallenge(userEmail, redirectUri, orgDomain)
         if (createMagicLinkChallengeResponse is APISuccess) {
-            val authUrl = createMagicLinkChallengeResponse.value.magicLink
-            call.respondRedirect(authUrl)
+            call.respondText(cryptr.toJSONString(createMagicLinkChallengeResponse.value), ContentType.Application.Json)
         } else {
             call.respondText(cryptr.toJSONString(createMagicLinkChallengeResponse), ContentType.Application.Json)
         }
