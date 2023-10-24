@@ -8,8 +8,8 @@ fun main() {
 
     val welcome = Welcome.create {
         name = "Company-name"
-        orgDomain = "your-company"
-        userEmail = "john@doe.co"
+        orgDomain = "creategram"
+        userEmail = "thibaud@creategram.fr"
     }
     createRoot(container).render(welcome)
 }

@@ -81,6 +81,12 @@ fun Application.myApplicationModule() {
         get("/request") {
             cryptrApiable.handleHeadlessRequest(call)
         }
+        get("/request-magic-link") {
+            cryptrApiable.handleMagicLinkHeadlessRequest(call)
+        }
+        get("/request-password") {
+            cryptrApiable.handlePasswordHeadlessRequest(call)
+        }
         get("/callback") {
             cryptrApiable.handleHeadlessCallback(call)
         }
