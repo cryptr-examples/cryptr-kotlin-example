@@ -5,13 +5,14 @@ import cryptr.kotlin.enums.ApplicationType
 import cryptr.kotlin.models.*
 import cryptr.kotlin.models.Application
 import cryptr.kotlin.models.List
-import cryptr.kotlin.models.jwt.JWTPayload
 import cryptr.kotlin.models.jwt.JWTToken
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.util.*
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.put
 import org.json.JSONObject
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -36,7 +37,8 @@ data class CryptrApiable(
         val params = call.parameters
         val orgDomain = params.get("org_domain")
         val userEmail = params.get("user_email")
-        val createSSOSamlChallengeResponse = cryptr.createSsoSamlChallenge(orgDomain = orgDomain, userEmail = userEmail)
+        val createSSOSamlChallengeResponse =
+            cryptr.createSsoSamlChallenge("http://localhost:8080/callback", orgDomain, userEmail)
         if (createSSOSamlChallengeResponse is APISuccess) {
             val authUrl = createSSOSamlChallengeResponse.value.authorizationUrl
             call.respondRedirect(authUrl)
@@ -45,22 +47,56 @@ data class CryptrApiable(
         }
     }
 
+    suspend fun handleMagicLinkHeadlessRequest(call: ApplicationCall) {
+        val params = call.parameters
+        val userEmail = params.getOrFail("user_email")
+        val orgDomain = params.get("org_domain")
+        val redirectUri = "http://localhost:8080/callback"
+        val createMagicLinkChallengeResponse = cryptr.createMagicLinkChallenge(userEmail, redirectUri, orgDomain)
+        if (createMagicLinkChallengeResponse is APISuccess) {
+            val authUrl = createMagicLinkChallengeResponse.value.magicLink
+            call.respondRedirect(authUrl)
+        } else {
+            call.respondText(cryptr.toJSONString(createMagicLinkChallengeResponse), ContentType.Application.Json)
+        }
+    }
+
+    suspend fun handlePasswordHeadlessRequest(call: ApplicationCall) {
+        val params = call.parameters
+        val userEmail = params.getOrFail("user_email")
+        val orgDomain = params.getOrFail("org_domain")
+        val redirectUri = "http:/localhost:8080/callback-password"
+        val createPasswordChallengeResponse =
+            cryptr.createPasswordRequest(userEmail, redirectUri, orgDomain)
+        call.respondText(cryptr.toJSONString(createPasswordChallengeResponse), ContentType.Application.Json)
+    }
+
     suspend fun handleHeadlessCallback(call: ApplicationCall) {
-        val callbackResp = cryptr.validateSsoChallenge(call.parameters.get("code"))
+        val callbackResp = cryptr.validateChallenge(call.parameters.get("code"))
         if (callbackResp is APISuccess) {
             val challengeResponse = callbackResp.value
-            val idClaims = challengeResponse.getIdClaims(cryptr.cryptrServiceUrl)
+            val idClaims = challengeResponse.getIdToken(cryptr.cryptrServiceUrl)
+            val accessClaims = challengeResponse.getAccessToken(cryptr.cryptrServiceUrl)
             if (idClaims is JWTToken) {
+                val response = buildJsonObject {
+                    put("access_claims", cryptr.formatNoNulNoDefaults.encodeToJsonElement(accessClaims!!.payload))
+                    put("access", challengeResponse.accessToken)
+                    put("id_claims", cryptr.formatNoNulNoDefaults.encodeToJsonElement(idClaims.payload))
+                    put("id", challengeResponse.idToken)
+                }
                 call.respondText(
-                    cryptr.format.encodeToString<JWTPayload>(idClaims.payload),
+                    response.toString(),
                     ContentType.Application.Json
                 )
             } else {
+                println("idClaims is not a JWTToken")
                 call.respondText(cryptr.toJSONString(challengeResponse), ContentType.Application.Json)
             }
         } else if (callbackResp is APIError) {
+            println("error")
             call.respondText(cryptr.toJSONString(callbackResp.error), ContentType.Application.Json)
         } else {
+            println("other")
             call.respondText(callbackResp.toString(), ContentType.Application.Json)
         }
     }
